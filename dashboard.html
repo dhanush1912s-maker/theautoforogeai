@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoForge AI — Live Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#000000;
+  --bg2:#0a0a0a;
+  --bg3:#111111;
+  --p1:#FFFAE8;
+  --p2:#F5DEB3;
+  --p3:#C8A870;
+  --grad:linear-gradient(135deg,#FFFAE8 0%,#F5DEB3 50%,#C8A870 100%);
+  --grad2:linear-gradient(135deg,#F5DEB3,#C8A870);
+  --glow:rgba(200,168,112,0.35);
+  --glass:rgba(255,255,255,0.04);
+  --glass-border:rgba(245,222,179,0.12);
+  --glass-hover:rgba(245,222,179,0.07);
+  --white:#FFFFFF;
+  --text:rgba(255,255,255,0.9);
+  --muted:rgba(255,255,255,0.55);
+  --muted2:rgba(255,255,255,0.28);
+  --border-p:rgba(200,168,112,0.25);
+  --green:#22c55e;
+  --yellow:#f59e0b;
+  --red:#ef4444;
+  --font:'Outfit',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --ease:cubic-bezier(0.4,0,0.2,1);
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 16px;
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(200,168,112,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 80%, rgba(245,222,179,0.04) 0%, transparent 55%);
+}
+
+/* ── BROWSER CHROME ── */
+.browser{width:100%;max-width:960px}
+
+.browser-bar{
+  background:#111;
+  border:1px solid var(--border-p);
+  border-bottom:none;
+  border-radius:14px 14px 0 0;
+  padding:11px 18px;
+  display:flex;align-items:center;gap:14px;
+}
+.dots{display:flex;gap:7px}
+.dot{width:13px;height:13px;border-radius:50%}
+.dot.r{background:#ef4444}.dot.y{background:#f59e0b}.dot.g{background:#22c55e}
+.url-bar{
+  flex:1;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border-p);
+  border-radius:7px;
+  padding:5px 14px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--muted);
+  display:flex;align-items:center;gap:6px;
+}
+.lock{font-size:10px;opacity:.5}
+.live-pill{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;color:var(--green);
+  background:rgba(34,197,94,0.1);
+  border:1px solid rgba(34,197,94,0.25);
+  border-radius:20px;padding:4px 12px;
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulseGreen 1.5s infinite}
+@keyframes pulseGreen{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.5)}50%{box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+
+/* ── DASHBOARD SHELL ── */
+.dash{
+  background:#0c0c0c;
+  border:1px solid var(--border-p);
+  border-radius:0 0 14px 14px;
+  display:flex;
+  overflow:hidden;
+  min-height:520px;
+}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:58px;
+  background:#080808;
+  border-right:1px solid var(--border-p);
+  display:flex;flex-direction:column;align-items:center;
+  padding:16px 0;gap:6px;
+  flex-shrink:0;
+}
+.logo-icon{
+  width:36px;height:36px;
+  background:var(--grad2);
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;margin-bottom:10px;
+  box-shadow:0 0 18px rgba(200,168,112,0.3);
+}
+.nav-btn{
+  width:36px;height:36px;border-radius:9px;
+  background:transparent;
+  border:1px solid transparent;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;
+  transition:all 0.2s var(--ease);
+  color:var(--muted);
+  position:relative;
+}
+.nav-btn:hover{background:var(--glass);border-color:var(--border-p);color:var(--p2)}
+.nav-btn.active{
+  background:rgba(200,168,112,0.12);
+  border-color:var(--border-p);
+  color:var(--p1);
+  box-shadow:0 0 12px rgba(200,168,112,0.15);
+}
+
+/* ── MAIN AREA ── */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* Panel header */
+.panel-header{
+  background:#0a0a0a;
+  border-bottom:1px solid var(--border-p);
+  padding:13px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.panel-title-wrap{display:flex;align-items:center;gap:8px}
+.panel-title{font-size:14px;font-weight:700;color:var(--p1)}
+.panel-sub{font-size:13px;color:var(--muted)}
+.sys-live{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:600;color:var(--green);
+}
+
+/* ── TAB CONTENT ── */
+.tab-content{display:none;flex:1;overflow-y:auto;padding:16px 20px}
+.tab-content.active{display:block}
+
+/* Scrollbar */
+.tab-content::-webkit-scrollbar{width:4px}
+.tab-content::-webkit-scrollbar-track{background:transparent}
+.tab-content::-webkit-scrollbar-thumb{background:var(--border-p);border-radius:2px}
+
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border-p);border:1px solid var(--border-p);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.stat-card{background:#0c0c0c;padding:14px 16px;transition:background 0.2s}
+.stat-card:hover{background:var(--glass)}
+.stat-label{font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.stat-val{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--p1);line-height:1}
+.stat-delta{font-size:11px;color:var(--green);margin-top:5px;display:flex;align-items:center;gap:3px}
+.stat-delta.gold{color:var(--p3)}
+
+/* ── SECTION HEADER ── */
+.sec-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.sec-title{font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em}
+.sec-badge{
+  font-family:var(--mono);font-size:10px;
+  color:var(--p3);
+  background:rgba(200,168,112,0.1);
+  border:1px solid var(--border-p);
+  border-radius:20px;padding:2px 10px;
+}
+
+/* ── TWO COL GRID ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* ── AGENT ROW ── */
+.agents-list,.activity-list{display:flex;flex-direction:column;gap:2px}
+.agent-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:8px;
+  border:1px solid transparent;
+  transition:all 0.2s var(--ease);
+  cursor:default;
+}
+.agent-row:hover{background:var(--glass);border-color:var(--border-p)}
+.agent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-live{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.6);animation:pulseGreen 2s infinite}
+.dot-busy{background:var(--yellow)}
+.dot-idle{background:var(--muted2)}
+.agent-info{flex:1;min-width:0}
+.agent-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-task{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.agent-progress{
+  height:2px;background:rgba(255,255,255,0.07);
+  border-radius:1px;margin-top:5px;overflow:hidden;
+}
+.agent-progress-fill{height:100%;border-radius:1px;animation:barGrow 1.2s var(--ease) both}
+@keyframes barGrow{from{width:0}}
+.fill-live{background:linear-gradient(90deg,var(--p3),var(--p1))}
+.fill-busy{background:linear-gradient(90deg,var(--yellow),#fcd34d)}
+.fill-idle{background:rgba(255,255,255,0.1)}
+
+.status-tag{
+  font-size:10px;font-weight:700;
+  padding:3px 9px;border-radius:20px;flex-shrink:0;
+  font-family:var(--mono);
+}
+.tag-live{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.tag-busy{background:rgba(245,158,11,0.12);color:var(--yellow);border:1px solid rgba(245,158,11,0.3)}
+.tag-idle{background:rgba(255,255,255,0.05);color:var(--muted2);border:1px solid rgba(255,255,255,0.08)}
+
+/* ── ACTIVITY ── */
+.act-row{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:8px 10px;border-radius:8px;
+  border:1px solid transparent;
+  transition:all 0.2s;
+  animation:fadeIn .4s var(--ease) both;
+}
+.act-row:hover{background:var(--glass);border-color:var(--border-p)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.act-icon-wrap{
+  width:28px;height:28px;border-radius:7px;
+  background:var(--glass);border:1px solid var(--border-p);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;flex-shrink:0;
+}
+.act-body{flex:1;min-width:0}
+.act-main{font-size:11px;font-weight:600;color:var(--text)}
+.act-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.act-time{font-family:var(--mono);font-size:10px;color:var(--muted2);flex-shrink:0;padding-top:1px}
+
+/* ── TAB 2: AGENTS DETAIL ── */
+.agents-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border-p);border:1px solid var(--border-p);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.ag-stat{background:#0c0c0c;padding:14px 16px}
+.ag-stat-label{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.ag-stat-val{font-family:var(--mono);font-size:22px;font-weight:700}
+.val-green{color:var(--green)}.val-yellow{color:var(--yellow)}.val-muted{color:var(--muted)}.val-gold{color:var(--p2)}
+
+.agent-detail-row{
+  padding:12px 14px;border-radius:10px;
+  background:var(--glass);border:1px solid var(--border-p);
+  margin-bottom:8px;
+  transition:all 0.2s;
+}
+.agent-detail-row:hover{background:rgba(200,168,112,0.06);border-color:rgba(200,168,112,0.3)}
+.adr-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.adr-name{flex:1;font-size:13px;font-weight:700;color:var(--p1)}
+.adr-time{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.adr-task{font-size:11px;color:var(--muted);margin-bottom:8px}
+.adr-bar{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden}
+.adr-fill{height:100%;border-radius:2px;animation:barGrow 1.4s var(--ease) both}
+
+/* ── TAB 3: WORKFLOWS ── */
+.wf-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border-p);border:1px solid var(--border-p);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.wf-stat{background:#0c0c0c;padding:14px 16px}
+.wf-stat-label{font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.wf-stat-val{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--p1)}
+.wf-stat-val.gold{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+.wf-table{width:100%;border-collapse:collapse}
+.wf-thead th{
+  font-size:10px;font-weight:700;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:.1em;
+  padding:8px 10px;text-align:left;
+  border-bottom:1px solid var(--border-p);
+}
+.wf-thead th:last-child,.wf-thead th:nth-child(3){text-align:right}
+.wf-row{transition:background 0.15s}
+.wf-row:hover td{background:var(--glass)}
+.wf-row td{padding:11px 10px;border-bottom:1px solid rgba(200,168,112,0.07);vertical-align:middle}
+.wf-name-cell{display:flex;align-items:center;gap:8px}
+.wf-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.wf-label{font-size:12px;font-weight:600;color:var(--text)}
+.wf-tools{display:flex;gap:4px;margin-top:3px}
+.tool-badge{
+  width:18px;height:18px;border-radius:4px;
+  background:rgba(200,168,112,0.12);
+  border:1px solid var(--border-p);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;color:var(--p3);font-weight:700;
+}
+/* Mini bar chart */
+.trend-bars{display:flex;align-items:flex-end;gap:2px;height:24px}
+.t-bar{
+  width:6px;border-radius:2px 2px 0 0;
+  background:rgba(200,168,112,0.2);
+  transition:height 0.3s;
+}
+.t-bar.high{background:linear-gradient(0deg,var(--p3),var(--p1))}
+.wf-runs{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--p2);text-align:right}
+.wf-last{font-size:11px;color:var(--muted);text-align:right}
+
+/* ── TAB 4: INTEGRATIONS ── */
+.int-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+.int-stat-card{
+  background:var(--glass);border:1px solid var(--border-p);
+  border-radius:10px;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.int-stat-icon{font-size:20px}
+.int-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.int-stat-val{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--p1)}
+
+.int-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.int-card{
+  background:var(--glass);border:1px solid var(--border-p);
+  border-radius:10px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+  transition:all 0.2s;cursor:default;
+}
+.int-card:hover{background:rgba(200,168,112,0.06);border-color:rgba(200,168,112,0.3)}
+.int-logo{
+  width:36px;height:36px;border-radius:9px;
+  background:rgba(200,168,112,0.1);border:1px solid var(--border-p);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;color:var(--p2);flex-shrink:0;
+}
+.int-info{flex:1;min-width:0}
+.int-name{font-size:13px;font-weight:700;color:var(--text)}
+.int-records{font-size:10px;color:var(--muted);margin-top:2px}
+.int-status{font-size:10px;font-weight:700;display:flex;align-items:center;gap:4px}
+.int-status.syncing{color:var(--p3)}
+.int-status.live{color:var(--green)}
+
+/* ── TICKER ── */
+.ticker-strip{
+  border-top:1px solid var(--border-p);
+  background:#080808;
+  padding:8px 0;
+  overflow:hidden;
+}
+.ticker-inner{
+  display:flex;gap:48px;
+  animation:tickerScroll 28s linear infinite;
+  white-space:nowrap;
+}
+@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:11px;color:var(--muted);
+}
+.ticker-item .t-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+.ticker-item b{color:var(--p3)}
+
+/* ── ANIMATIONS ── */
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.anim{animation:slideIn .35s var(--ease) both}
+
+@media(max-width:640px){
+  .stat-grid,.agents-stats,.wf-stats{grid-template-columns:repeat(2,1fr)}
+  .two-col,.int-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="browser">
+  <!-- Browser bar -->
+  <div class="browser-bar">
+    <div class="dots">
+      <div class="dot r"></div>
+      <div class="dot y"></div>
+      <div class="dot g"></div>
+    </div>
+    <div class="url-bar">
+      <span class="lock">🔒</span>
+      <span>app.autoforgeai.com/dashboard</span>
+    </div>
+    <div class="live-pill"><div class="pulse"></div>LIVE</div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dash">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="logo-icon">⚡</div>
+      <button class="nav-btn active" onclick="switchTab(0)" title="Overview">⊞</button>
+      <button class="nav-btn" onclick="switchTab(1)" title="AI Agents">👤</button>
+      <button class="nav-btn" onclick="switchTab(2)" title="Workflows">✓</button>
+      <button class="nav-btn" onclick="switchTab(3)" title="Integrations">⇄</button>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- Header (dynamic) -->
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-title" id="hdr-title">Operations Dashboard</span>
+          <span class="panel-sub" id="hdr-sub">/ Overview</span>
+        </div>
+        <div class="sys-live"><div class="pulse"></div> All systems live</div>
+      </div>
+
+      <!-- ── TAB 0: OVERVIEW ── -->
+      <div class="tab-content active" id="tab-0">
+        <!-- Stats -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Active Agents</div>
+            <div class="stat-val" id="st-agents">0</div>
+            <div class="stat-delta">↑ 2 added this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tasks Today</div>
+            <div class="stat-val" id="st-tasks">0</div>
+            <div class="stat-delta">↑ 0 manual steps</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Hours Saved</div>
+            <div class="stat-val" id="st-hours">0h</div>
+            <div class="stat-delta">↑ This week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Revenue Saved</div>
+            <div class="stat-val" id="st-rev">$0</div>
+            <div class="stat-delta gold">↑ Annual run rate</div>
+          </div>
+        </div>
+
+        <!-- Two col -->
+        <div class="two-col">
+          <!-- Agents -->
+          <div>
+            <div class="sec-header">
+              <span class="sec-title">AI Agents</span>
+              <span class="sec-badge" id="ag-badge">7 running</span>
+            </div>
+            <div class="agents-list" id="agents-list"></div>
+          </div>
+          <!-- Activity -->
+          <div>
+            <div class="sec-header">
+              <span class="sec-title">Live Activity</span>
+              <span class="sec-badge" id="act-badge">266 today</span>
+            </div>
+            <div class="activity-list" id="activity-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB 1: AI AGENTS ── -->
+      <div class="tab-content" id="tab-1">
+        <div class="agents-stats">
+          <div class="ag-stat">
+            <div class="ag-stat-label">Active</div>
+            <div class="ag-stat-val val-green" id="ag-active">4</div>
+          </div>
+          <div class="ag-stat">
+            <div class="ag-stat-label">Busy</div>
+            <div class="ag-stat-val val-yellow">1</div>
+          </div>
+          <div class="ag-stat">
+            <div class="ag-stat-label">Idle</div>
+            <div class="ag-stat-val val-muted">2</div>
+          </div>
+          <div class="ag-stat">
+            <div class="ag-stat-label">Tokens/hr</div>
+            <div class="ag-stat-val val-gold" id="ag-tokens">0</div>
+          </div>
+        </div>
+        <div id="agents-detail"></div>
+      </div>
+
+      <!-- ── TAB 2: WORKFLOWS ── -->
+      <div class="tab-content" id="tab-2">
+        <div class="wf-stats">
+          <div class="wf-stat">
+            <div class="wf-stat-label">Total Runs</div>
+            <div class="wf-stat-val">623</div>
+          </div>
+          <div class="wf-stat">
+            <div class="wf-stat-label">Success Rate</div>
+            <div class="wf-stat-val gold">99.8%</div>
+          </div>
+          <div class="wf-stat">
+            <div class="wf-stat-label">Active</div>
+            <div class="wf-stat-val">4 / 5</div>
+          </div>
+          <div class="wf-stat">
+            <div class="wf-stat-label">Avg Runtime</div>
+            <div class="wf-stat-val">1.2s</div>
+          </div>
+        </div>
+
+        <table class="wf-table">
+          <thead class="wf-thead">
+            <tr>
+              <th>Workflow</th>
+              <th>7D Trend</th>
+              <th style="text-align:right">Runs</th>
+              <th style="text-align:right">Last</th>
+            </tr>
+          </thead>
+          <tbody id="wf-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ── TAB 3: INTEGRATIONS ── -->
+      <div class="tab-content" id="tab-3">
+        <div class="int-stats">
+          <div class="int-stat-card">
+            <div class="int-stat-icon">🔗</div>
+            <div>
+              <div class="int-stat-label">Connected</div>
+              <div class="int-stat-val">8 Tools</div>
+            </div>
+          </div>
+          <div class="int-stat-card">
+            <div class="int-stat-icon">📊</div>
+            <div>
+              <div class="int-stat-label">Total Records</div>
+              <div class="int-stat-val" id="int-records">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="int-grid" id="int-grid"></div>
+      </div>
+
+      <!-- Ticker -->
+      <div class="ticker-strip">
+        <div class="ticker-inner" id="ticker"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const agentsData = [
+  {name:'SDR Outreach Agent',  task:'Processing leads · Apollo sync active', status:'live', pct:88, time:'2h 14m'},
+  {name:'Email Triage Agent',  task:'Inbox cleared · 38 handled today',      status:'live', pct:72, time:'4h 02m'},
+  {name:'Lead Scorer',         task:'Scoring inbound · HubSpot sync',        status:'live', pct:65, time:'1h 47m'},
+  {name:'Proposal Generator',  task:'Building draft · Client Corp',          status:'busy', pct:54, time:'0h 18m'},
+  {name:'Meeting Booker',      task:'2 meetings confirmed today',            status:'live', pct:40, time:'3h 05m'},
+  {name:'Report Builder',      task:'Scheduled · runs at 18:00',             status:'idle', pct:0,  time:'—'},
+  {name:'CRM Sync Agent',      task:'HubSpot updated · 14 records',         status:'live', pct:91, time:'5h 22m'},
+];
+
+const activityData = [
+  {icon:'📧', main:'Inbound reply → classified as high intent', sub:'Gmail → HubSpot · routed to sales',   time:'now'},
+  {icon:'🎯', main:'New lead scored 89 — rep notified',         sub:'Apollo → CRM · Slack ping fired',     time:'1m'},
+  {icon:'📅', main:'Meeting booked · James K. confirmed',       sub:'Google Calendar · brief auto-sent',   time:'4m'},
+  {icon:'🔗', main:'LinkedIn reply → follow-up queued',         sub:'HeyReach → Instantly sequence',       time:'9m'},
+  {icon:'📝', main:'Proposal sent → Day 2 reminder set',        sub:'Email · AutoForge follow-up system',  time:'14m'},
+  {icon:'📊', main:'Weekly report auto-compiled',               sub:'All data sources · PDF delivered',    time:'6h'},
+];
+
+const workflowsData = [
+  {name:'Lead Enrichment',   tools:['A','C','H'], trend:[4,5,6,5,7,8,9], runs:342, last:'2m ago',   status:'live'},
+  {name:'Inbound Qualifier', tools:['G','H'],     trend:[3,4,3,5,6,5,7], runs:128, last:'just now', status:'live'},
+  {name:'Meeting Booker',    tools:['L','N'],     trend:[2,3,4,4,5,5,6], runs:89,  last:'5m ago',   status:'live'},
+  {name:'Outbound Sequence', tools:['A','I'],     trend:[3,4,5,4,6,7,8], runs:56,  last:'1m ago',   status:'live'},
+  {name:'Weekly Report',     tools:['H','S'],     trend:[1,1,2,1,1,2,1], runs:8,   last:'6h ago',   status:'idle'},
+];
+
+const integrationsData = [
+  {abbr:'G',  name:'Gmail',     records:'2.4k', last:'1m ago',  status:'syncing'},
+  {abbr:'HS', name:'HubSpot',   records:'8.1k', last:'just now',status:'live'},
+  {abbr:'AP', name:'Apollo',    records:'24.7k',last:'3m ago',  status:'live'},
+  {abbr:'LI', name:'LinkedIn',  records:'1.2k', last:'5m ago',  status:'live'},
+  {abbr:'N8', name:'n8n',       records:'156',  last:'2m ago',  status:'live'},
+  {abbr:'SL', name:'Slack',     records:'892',  last:'just now',status:'live'},
+  {abbr:'CL', name:'Clay',      records:'4.3k', last:'30s ago', status:'syncing'},
+  {abbr:'IN', name:'Instantly', records:'3.8k', last:'7m ago',  status:'live'},
+];
+
+const tickerItems = [
+  'SDR Agent sent 14 outreach emails',
+  'Lead qualified — score 87 — CRM updated',
+  'Meeting booked · Priya S. · tomorrow 10am',
+  'Proposal draft ready · $18K deal',
+  'Email triage cleared 44 threads',
+  'LinkedIn sequence step 2 fired · 28 contacts',
+  'Report generated · weekly summary sent',
+  'New lead enriched · 94% ICP match',
+  'Inbound reply → high intent · routed to sales',
+  'CRM sync complete · 12 records updated',
+];
+
+// ── RENDER OVERVIEW ──────────────────────────────────────
+function renderAgentsList() {
+  const el = document.getElementById('agents-list');
+  el.innerHTML = agentsData.map((a,i) => `
+    <div class="agent-row anim" style="animation-delay:${i*.06}s">
+      <div class="agent-dot dot-${a.status}"></div>
+      <div class="agent-info">
+        <div class="agent-name">${a.name}</div>
+        <div class="agent-task">${a.task}</div>
+        <div class="agent-progress"><div class="agent-progress-fill fill-${a.status}" style="width:${a.pct}%;animation-delay:${i*.08}s"></div></div>
+      </div>
+      <div class="status-tag tag-${a.status}">${a.status.toUpperCase()}</div>
+    </div>
+  `).join('');
+}
+
+function renderActivity() {
+  const el = document.getElementById('activity-list');
+  el.innerHTML = activityData.map((a,i) => `
+    <div class="act-row" style="animation-delay:${i*.07}s">
+      <div class="act-icon-wrap">${a.icon}</div>
+      <div class="act-body">
+        <div class="act-main">${a.main}</div>
+        <div class="act-sub">${a.sub}</div>
+      </div>
+      <div class="act-time">${a.time}</div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER AGENTS DETAIL ─────────────────────────────────
+function renderAgentsDetail() {
+  const el = document.getElementById('agents-detail');
+  el.innerHTML = agentsData.map((a,i) => `
+    <div class="agent-detail-row anim" style="animation-delay:${i*.07}s">
+      <div class="adr-top">
+        <div class="agent-dot dot-${a.status}"></div>
+        <div class="adr-name">${a.name}</div>
+        <div class="adr-time" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${a.time}</div>
+        <div class="status-tag tag-${a.status}">${a.status.toUpperCase()}</div>
+      </div>
+      <div class="adr-task">${a.task}</div>
+      <div class="adr-bar"><div class="adr-fill fill-${a.status}" style="width:${a.pct}%;animation-delay:${i*.1}s"></div></div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER WORKFLOWS ─────────────────────────────────────
+function renderWorkflows() {
+  const tbody = document.getElementById('wf-tbody');
+  tbody.innerHTML = workflowsData.map((w,ri) => {
+    const maxH = Math.max(...w.trend);
+    const bars = w.trend.map((v,bi) => {
+      const h = Math.round((v/maxH)*100);
+      const cls = bi === w.trend.length-1 ? 'high' : '';
+      return `<div class="t-bar ${cls}" style="height:${h}%;animation:barGrow ${.8+bi*.1}s var(--ease) both;animation-delay:${ri*.05+bi*.04}s"></div>`;
+    }).join('');
+    const tools = w.tools.map(t => `<div class="tool-badge">${t}</div>`).join('');
+    return `
+      <tr class="wf-row">
+        <td>
+          <div class="wf-name-cell">
+            <div class="wf-dot dot-${w.status}"></div>
+            <div>
+              <div class="wf-label">${w.name}</div>
+              <div class="wf-tools">${tools}</div>
+            </div>
+          </div>
+        </td>
+        <td><div class="trend-bars">${bars}</div></td>
+        <td class="wf-runs">${w.runs}</td>
+        <td class="wf-last">${w.last}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ── RENDER INTEGRATIONS ──────────────────────────────────
+function renderIntegrations() {
+  const el = document.getElementById('int-grid');
+  el.innerHTML = integrationsData.map((t,i) => `
+    <div class="int-card anim" style="animation-delay:${i*.06}s">
+      <div class="int-logo">${t.abbr}</div>
+      <div class="int-info">
+        <div class="int-name">${t.name}</div>
+        <div class="int-records">${t.records} records · ${t.last}</div>
+      </div>
+      <div class="int-status ${t.status}">
+        <div class="pulse" style="${t.status==='live'?'':'background:var(--p3);animation:none'}"></div>
+        ${t.status.charAt(0).toUpperCase()+t.status.slice(1)}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER TICKER ────────────────────────────────────────
+function renderTicker() {
+  const el = document.getElementById('ticker');
+  const items = [...tickerItems,...tickerItems].map(t =>
+    `<span class="ticker-item"><span class="t-dot"></span> <b>${t.split('·')[0].trim()}</b>${t.includes('·') ? ' · '+t.split('·').slice(1).join('·') : ''}</span>`
+  ).join('');
+  el.innerHTML = items;
+}
+
+// ── COUNTER ANIM ─────────────────────────────────────────
+function animCount(id, target, prefix='', suffix='', dur=1800) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  let v=0, step=target/(dur/16);
+  const t = setInterval(()=>{
+    v = Math.min(v+step, target);
+    el.textContent = prefix + (target >= 1000 ? (v/1000).toFixed(1)+'M' : Math.round(v)) + suffix;
+    if(v>=target) clearInterval(t);
+  },16);
+}
+
+// ── TAB SWITCH ───────────────────────────────────────────
+const headers = [
+  {title:'Operations Dashboard', sub:'/ Overview'},
+  {title:'AI Agents',            sub:'/ 7 Running'},
+  {title:'Active Workflows',     sub:'/ Automations'},
+  {title:'Integrations',         sub:'/ 8 Connected'},
+];
+
+function switchTab(i) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+i).classList.add('active');
+  document.querySelectorAll('.nav-btn')[i].classList.add('active');
+  document.getElementById('hdr-title').textContent = headers[i].title;
+  document.getElementById('hdr-sub').textContent = headers[i].sub;
+}
+
+// ── LIVE UPDATES ─────────────────────────────────────────
+let taskCount = 266;
+function liveUpdate() {
+  taskCount += Math.floor(Math.random()*2)+1;
+  document.getElementById('st-tasks').textContent = taskCount;
+  document.getElementById('act-badge').textContent = taskCount + ' today';
+
+  // Rotate a random agent
+  const statuses = ['live','live','live','busy'];
+  const ri = Math.floor(Math.random()*agentsData.length);
+  if(agentsData[ri].status !== 'idle') {
+    agentsData[ri].status = statuses[Math.floor(Math.random()*statuses.length)];
+    agentsData[ri].pct = Math.min(100, agentsData[ri].pct + Math.floor(Math.random()*4)-1);
+    renderAgentsList();
+  }
+
+  // Push new activity
+  const newActs = [
+    {icon:'📧', main:'New email reply → high priority',       sub:'Gmail → HubSpot · queued',        time:'now'},
+    {icon:'🎯', main:'Lead enriched · ICP score 96%',         sub:'Clay → CRM sync fired',            time:'now'},
+    {icon:'📅', main:'Calendar slot auto-confirmed',          sub:'Google Cal · brief sent',          time:'now'},
+    {icon:'📝', main:'Proposal generator · new draft',        sub:'Notion · $14K scope',              time:'now'},
+    {icon:'🔗', main:'CRM updated · deal stage advanced',     sub:'HubSpot · 3 records changed',      time:'now'},
+  ];
+  activityData.unshift(newActs[Math.floor(Math.random()*newActs.length)]);
+  activityData.length = 6;
+  renderActivity();
+}
+
+// ── INIT ─────────────────────────────────────────────────
+renderAgentsList();
+renderActivity();
+renderAgentsDetail();
+renderWorkflows();
+renderIntegrations();
+renderTicker();
+
+setTimeout(()=>{
+  animCount('st-agents', 7);
+  animCount('st-tasks', 266);
+  animCount('st-hours', 18, '', 'h');
+  animCount('st-rev', 2.4, '$', 'M');
+  animCount('ag-tokens', 59224);
+  animCount('int-records', 45.6, '', 'k');
+}, 300);
+
+setInterval(liveUpdate, 3500);
+</script>
+</body>
+</html>

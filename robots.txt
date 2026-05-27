@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://theautoforgeai.com/sitemap.xml
